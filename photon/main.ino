@@ -22,8 +22,43 @@ String variable;
 String value;
 String incomingString;
 
-bool sendCode = false;
-int delayAmount = 100;
+int sendCode = 0;
+int delayAmount = 50;
+
+void sendData(int type, long sendVal) {
+    Serial.println("");
+    Serial.println(type, HEX);
+    Serial.println(sendVal, HEX);
+    Serial.println("");
+    switch(type) {
+        case JVC:
+        case SANYO:
+        case MITSUBISHI:
+        case UNKNOWN:
+            break;
+        case RC5:
+            irsend.sendRC5(sendVal, 12);
+            break;
+        case RC6:
+            irsend.sendRC6(sendVal, 12);
+            break;
+        case NEC:
+            irsend.sendNEC(sendVal, 12);
+            break;
+        case SONY:
+            irsend.sendSony(sendVal, 12);
+            break;
+        case PANASONIC:
+            irsend.sendPanasonic(12, sendVal);
+            break;
+        case DISH:
+            irsend.sendDISH(sendVal, 12);
+            break;
+        case SHARP:
+            irsend.sendSharp(sendVal, 12);
+            break;
+    }
+}
 
 void myHandler(const char *event, const char *data) {
     eventName = String(event);
@@ -46,8 +81,8 @@ void myHandler(const char *event, const char *data) {
         variable = stringer.substring(0, index);
         value = stringer.substring(index + 1, stringer.length());
 
-        if (value == "executeFunction") {
-            sendCode = true;
+        if (variable == "codeType") {
+            sendCode = value.toInt();
         }
 
         if (variable == "delay") {
@@ -55,7 +90,7 @@ void myHandler(const char *event, const char *data) {
         }
 
         if (variable == "codes") {
-            value.toCharArray(string2, value.length());
+            value.toCharArray(string2, value.length() + 1);
             int i2 = 0;
 
             array2[i2] = strtok(string2, ",");
@@ -71,11 +106,10 @@ void myHandler(const char *event, const char *data) {
 
                 long sendVal = strtoul(charArr, NULL, 0);
 
-                if (incomingString.length() < 8) {
-                    irsend.sendSony(sendVal, 12);
+                if (incomingString.length() < 8 && sendVal != 0) {
+                    sendData(sendCode, sendVal);
+                    delay(delayAmount);
                 }
-
-                delay(delayAmount);
             }
 
             irrecv.enableIRIn();
@@ -108,7 +142,7 @@ decode_results results;
 
 void loop() {
     if (irrecv.decode(&results)) {
-        Particle.publish("ctrlr", "subEvent:learning;code:" + String(results.value, HEX), 60, PRIVATE);
+        Particle.publish("ctrlr", "subEvent:learning;codeType:" + String(results.decode_type) + ";code:" + String(results.value, HEX), 60, PRIVATE);
         irrecv.resume();
     }
 }

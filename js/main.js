@@ -85,7 +85,7 @@ function handleData(data) {
                 $('#sequenceFormGroups').append(`
                     <div class="form-group">
                         <label for="code${$(this).children().length}">Name for Code ${"0x" + data.data.code}</label>
-                        <input type="text" class="form-control" id="code${$(this).children().length}" placeholder="Power" data-code="${"0x" + data.data.code}">
+                        <input type="text" class="form-control" id="code${$(this).children().length}" placeholder="Power" data-code="${"0x" + data.data.code}" data-codetype="${data.data.codeType}">
                     </div>
                 `);
             }
@@ -112,6 +112,7 @@ $(function() {
             name: particleEventName,
             data: encodeObject({
                 subEvent: 'executeFunction',
+                codeType: data.codeType,
                 codes: data.order
             }),
             auth: particleAccessToken
@@ -128,6 +129,7 @@ $(function() {
         event.preventDefault();
 
         var realName = "";
+        var codeType = 0;
         var sequence = {};
         var order = [];
         var codeOut = ""
@@ -144,11 +146,13 @@ $(function() {
             order.push(code);
             sequence[name] = code;
             codeOut = code;
+            codeType = $(this).data('codetype');
         });
 
         dataCollection.doc(realName || codeOut).set({
-            sequence,
-            order
+            sequence: sequence,
+            codeType: codeType,
+            order: order
         });
 
         $('#saveModal').modal('hide');
